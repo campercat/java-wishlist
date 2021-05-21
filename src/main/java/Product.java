@@ -3,8 +3,10 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
@@ -14,7 +16,8 @@ import org.hibernate.validator.constraints.URL;
 @Table(name="products")
 public class Product {
   @Id
-  @GeneratedValue(strategy= GenerationType.IDENTITY)
+  @SequenceGenerator(name="product_generator", sequenceName="products_id_seq", allocationSize = 1)
+  @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="product_generator")
   @Column(name="id", nullable=false, unique=true)
   private Long id;
 
@@ -31,6 +34,18 @@ public class Product {
   @URL(regexp = "^(http|https).*||null", message = "Your URL must use a protocol of http or https")
   @Column(name="url")
   private String url;
+
+  @ManyToOne
+  @JoinColumn(name="category_id", nullable = false)
+  private Category category;
+
+  public Category getCategory() {
+    return category;
+  }
+
+  public void setCategory(Category category) {
+    this.category = category;
+  }
 
   public Long getId() {
     return id;

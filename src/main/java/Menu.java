@@ -16,12 +16,14 @@ public class Menu {
 
   public static final String ADD_A_PRODUCT = "Add a Product";
   public static final String LIST_ALL_PRODUCTS = "Display all products";
+  public static final String VIEW_PRODUCTS_IN_A_CATEGORY = "View products in a category";
   public static final String QUIT_TEXT = "Quit";
 
   public enum MenuOption {
     a(ADD_A_PRODUCT),
     b(LIST_ALL_PRODUCTS),
-    c(QUIT_TEXT);
+    c(VIEW_PRODUCTS_IN_A_CATEGORY),
+    d(QUIT_TEXT);
 
     private final String optionText;
 
@@ -81,6 +83,24 @@ public class Menu {
             }
           } while (uniqueProduct.size() > 0);
 
+          System.out.println("What is the category?");
+          String productCategoryName = scanner.nextLine();
+          // Query the db for category entity based on user input
+          TypedQuery<Category> categoryTypedQuery = em.createQuery("SELECT c FROM Category c WHERE name='" + productCategoryName + "'", Category.class);
+          List<Category> uniqueCategory = categoryTypedQuery.getResultList();
+          Category category;
+          // If category does not exist yet, create a Category entity
+          if(uniqueCategory.size() == 0) {
+            category = new Category();
+            category.setName(productCategoryName);
+            em.getTransaction().begin();
+            em.persist(category);
+            em.getTransaction().commit();
+            // If category already exists, store category result to variable
+          } else {
+            category = uniqueCategory.get(0);
+          }
+
           System.out.println("What is the price?");
           double productPrice = scanner.nextDouble();
           scanner.nextLine();
@@ -92,6 +112,7 @@ public class Menu {
           newProduct.setName(productName);
           newProduct.setPrice(productPrice);
           newProduct.setUrl(productUrl);
+          newProduct.setCategory(category);
 
           violations = validator.validate(newProduct);
 
@@ -115,6 +136,7 @@ public class Menu {
         if (productsList.size() > 0) {
           for (Product product : productsList) {
             System.out.println("Name: " + product.getName());
+            System.out.println("Category: " + product.getCategory().getName());
             System.out.println("Price: " + product.getPrice());
             System.out.println("URL: " + product.getUrl());
             System.out.println("------------");
@@ -122,8 +144,27 @@ public class Menu {
         } else {
           System.out.println("No products found.");
         }
+      } else if(input == MenuOption.c) {
+        TypedQuery<Category> categoryTypedQuery = em.createQuery("FROM Category", Category.class);
+        List<Category> categoryList = categoryTypedQuery.getResultList();
+
+        int categoryIndex = 1;
+        for(Category category : categoryList) {
+          System.out.println(categoryIndex + ". " + category.getName() + " (" + category.getProducts().size() + ")");
+          categoryIndex++;
+        }
+        System.out.println("Select a category to continue: ");
+        int categoryInput = scanner.nextInt();
+        scanner.nextLine();
+        List<Product> productList = categoryList.get(categoryInput - 1).getProducts();
+        for(Product product : productList) {
+          System.out.println("Name: " + product.getName());
+          System.out.println("Price: " + product.getPrice());
+          System.out.println("URL: " + product.getUrl());
+          System.out.println("------------");
+        }
       }
-    } while (input != MenuOption.c);
+    } while (input != MenuOption.d);
     em.close();
     emf.close();
     System.out.println("Thanks! Come back soon ya hear!");
